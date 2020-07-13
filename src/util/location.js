@@ -15,6 +15,7 @@ export function normalizeLocation (
 ): Location {
   let next: Location = typeof raw === 'string' ? { path: raw } : raw
   // named target
+  // normalized过了就返回本身
   if (next._normalized) {
     return next
   } else if (next.name) {
@@ -45,16 +46,19 @@ export function normalizeLocation (
 
   const parsedPath = parsePath(next.path || '')
   const basePath = (current && current.path) || '/'
+  // 解析出path
   const path = parsedPath.path
     ? resolvePath(parsedPath.path, basePath, append || next.append)
     : basePath
 
+  // 解析出query
   const query = resolveQuery(
     parsedPath.query,
     next.query,
     router && router.options.parseQuery
   )
 
+  // 解析出hash
   let hash = next.hash || parsedPath.hash
   if (hash && hash.charAt(0) !== '#') {
     hash = `#${hash}`

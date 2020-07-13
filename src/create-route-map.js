@@ -4,6 +4,7 @@ import Regexp from 'path-to-regexp'
 import { cleanPath } from './util/path'
 import { assert, warn } from './util/warn'
 
+// 创建路由映射表
 export function createRouteMap (
   routes: Array<RouteConfig>,
   oldPathList?: Array<string>,
@@ -21,12 +22,14 @@ export function createRouteMap (
   // $flow-disable-line
   const nameMap: Dictionary<RouteRecord> = oldNameMap || Object.create(null)
 
+  // 遍历一级路由就行了。因为子路由会递归。
   routes.forEach(route => {
     addRouteRecord(pathList, pathMap, nameMap, route)
   })
 
   // ensure wildcard routes are always at the end
   for (let i = 0, l = pathList.length; i < l; i++) {
+    // 如果pathList里有通配符，就调整优先级
     if (pathList[i] === '*') {
       pathList.push(pathList.splice(i, 1)[0])
       l--
@@ -74,14 +77,17 @@ function addRouteRecord (
 
   const pathToRegexpOptions: PathToRegexpOptions =
     route.pathToRegexpOptions || {}
+  // 处理path
   const normalizedPath = normalizePath(path, parent, pathToRegexpOptions.strict)
 
   if (typeof route.caseSensitive === 'boolean') {
     pathToRegexpOptions.sensitive = route.caseSensitive
   }
 
+  // 路由记录,对route对象做了完善
   const record: RouteRecord = {
     path: normalizedPath,
+    // 路由正则
     regex: compileRouteRegex(normalizedPath, pathToRegexpOptions),
     components: route.components || { default: route.component },
     instances: {},
@@ -99,6 +105,7 @@ function addRouteRecord (
           : { default: route.props }
   }
 
+  // 有children就递归调用addRouteRecord，并把当前record作为parent
   if (route.children) {
     // Warn if route is named, does not redirect and has a default child route.
     // If users navigate to this route by name, the default child will
@@ -129,6 +136,8 @@ function addRouteRecord (
     })
   }
 
+  // 维护一个path数组，一个path对象
+  // 已有参数就不会添加了
   if (!pathMap[record.path]) {
     pathList.push(record.path)
     pathMap[record.path] = record
@@ -162,6 +171,7 @@ function addRouteRecord (
     }
   }
 
+  // 有name的话，在维护一个nameMap。pathMap以path为key，nameMap以name为key
   if (name) {
     if (!nameMap[name]) {
       nameMap[name] = record
@@ -198,8 +208,12 @@ function normalizePath (
   parent?: RouteRecord,
   strict?: boolean
 ): string {
+  // 去掉 /
   if (!strict) path = path.replace(/\/$/, '')
+  // 第一个字符是/ 就是绝对路径
   if (path[0] === '/') return path
+  // 没有parent就返回
   if (parent == null) return path
+  // 有parent就拼接，将双斜线变成单斜线
   return cleanPath(`${parent.path}/${path}`)
 }

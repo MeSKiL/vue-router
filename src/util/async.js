@@ -3,6 +3,7 @@
 export function runQueue (queue: Array<?NavigationGuard>, fn: Function, cb: Function) {
   const step = index => {
     if (index >= queue.length) {
+      // 执行完了以后的回调
       cb()
     } else {
       if (queue[index]) {

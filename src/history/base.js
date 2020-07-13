@@ -72,6 +72,7 @@ export class History {
     this.errorCbs.push(errorCb)
   }
 
+  // 路由切换
   transitionTo (
     location: RawLocation,
     onComplete?: Function,
@@ -80,6 +81,7 @@ export class History {
     let route
     // catch redirect option https://github.com/vuejs/vue-router/issues/3201
     try {
+      // 获取route
       route = this.router.match(location, this.current)
     } catch (e) {
       this.errorCbs.forEach(cb => {
@@ -88,13 +90,18 @@ export class History {
       // Exception should still be thrown
       throw e
     }
+    // 跳转
     this.confirmTransition(
       route,
       () => {
+        // 成功回调
         const prev = this.current
+        // 守卫执行完之后执行
         this.updateRoute(route)
+        // 执行切换路由成功回调
         onComplete && onComplete(route)
         this.ensureURL()
+        // 执行afterHooks
         this.router.afterHooks.forEach(hook => {
           hook && hook(route, prev)
         })
@@ -108,6 +115,7 @@ export class History {
         }
       },
       err => {
+        // 取消回调
         if (onAbort) {
           onAbort(err)
         }
@@ -130,12 +138,15 @@ export class History {
   }
 
   confirmTransition (route: Route, onComplete: Function, onAbort?: Function) {
+    // 当前路径
     const current = this.current
+    // 取消了就会调用abort
     const abort = err => {
       // changed after adding errors with
       // https://github.com/vuejs/vue-router/pull/3047 before that change,
       // redirect and aborted navigation would produce an err == null
       if (!isRouterError(err) && isError(err)) {
+        // 不是路由的错误,就执行错误回调数组里的回调
         if (this.errorCbs.length) {
           this.errorCbs.forEach(cb => {
             cb(err)
@@ -147,8 +158,12 @@ export class History {
       }
       onAbort && onAbort(err)
     }
+    // matched就是目标路径到根路径所有record的数组集合
+    // 新路径在matched的位置
     const lastRouteIndex = route.matched.length - 1
+    // 当前路径在matched中的的位置
     const lastCurrentIndex = current.matched.length - 1
+    // 路由没有发生改变
     if (
       isSameRoute(route, current) &&
       // in the case the route map has been dynamically appended to
@@ -164,16 +179,20 @@ export class History {
       route.matched
     )
 
+    // 路由守卫数组
     const queue: Array<?NavigationGuard> = [].concat(
       // in-component leave guards
+      // 获取leaveGuards的数组
       extractLeaveGuards(deactivated),
       // global before hooks
       this.router.beforeHooks,
       // in-component update hooks
       extractUpdateHooks(updated),
       // in-config enter guards
+      // 执行路由中定义的beforeEnter
       activated.map(m => m.beforeEnter),
       // async components
+      // 解析异步路由组件，解析完执行next，异步组件在这里也被当做执行路由守卫的一环
       resolveAsyncComponents(activated)
     )
 
@@ -186,9 +205,11 @@ export class History {
         hook(route, current, (to: any) => {
           if (to === false) {
             // next(false) -> abort navigation, ensure current URL
+            // to是false就abort
             this.ensureURL(true)
             abort(createNavigationAbortedError(current, route))
           } else if (isError(to)) {
+            // to是error就abort
             this.ensureURL(true)
             abort(to)
           } else if (
@@ -205,6 +226,9 @@ export class History {
             }
           } else {
             // confirm transition and pass on the value
+            // () => {
+            //   step(index + 1)
+            // }
             next(to)
           }
         })
@@ -212,14 +236,16 @@ export class History {
         abort(e)
       }
     }
-
+    // 顺序执行异步queue
     runQueue(queue, iterator, () => {
       const postEnterCbs = []
       const isValid = () => this.current === route
       // wait until async components are resolved before
       // extracting in-component enter guards
+      // 获取beforeRouteEnter守卫数组。
       const enterGuards = extractEnterGuards(activated, postEnterCbs, isValid)
       const queue = enterGuards.concat(this.router.resolveHooks)
+      // 执行新queue，最后一项是resolveHooks
       runQueue(queue, iterator, () => {
         if (this.pending !== route) {
           return abort(createNavigationCancelledError(current, route))
@@ -227,6 +253,7 @@ export class History {
         this.pending = null
         onComplete(route)
         if (this.router.app) {
+          // 执行轮训函数
           this.router.app.$nextTick(() => {
             postEnterCbs.forEach(cb => {
               cb()
@@ -284,14 +311,18 @@ function resolveQueue (
 } {
   let i
   const max = Math.max(current.length, next.length)
+  // 找到第一个不同的点
   for (i = 0; i < max; i++) {
     if (current[i] !== next[i]) {
       break
     }
   }
   return {
+    // 重合部分
     updated: next.slice(0, i),
+    // 新增部分
     activated: next.slice(i),
+    // 删除部分
     deactivated: current.slice(i)
   }
 }
@@ -302,14 +333,18 @@ function extractGuards (
   bind: Function,
   reverse?: boolean
 ): Array<?Function> {
+  // records下的每个records里的每个component都执行一遍fn，并将返回值拍平
   const guards = flatMapComponents(records, (def, instance, match, key) => {
+    // 拿到相应的守卫
     const guard = extractGuard(def, name)
+    // 绑定上下文
     if (guard) {
       return Array.isArray(guard)
         ? guard.map(guard => bind(guard, instance, match, key))
         : bind(guard, instance, match, key)
     }
   })
+  // 由于record是先父后子，所以leave的话，就需要reverse
   return flatten(reverse ? guards.reverse() : guards)
 }
 
@@ -325,10 +360,12 @@ function extractGuard (
 }
 
 function extractLeaveGuards (deactivated: Array<RouteRecord>): Array<?Function> {
+  // deactivated 删除部分的record
   return extractGuards(deactivated, 'beforeRouteLeave', bindGuard, true)
 }
 
 function extractUpdateHooks (updated: Array<RouteRecord>): Array<?Function> {
+  // updated 不变的record是updated的
   return extractGuards(updated, 'beforeRouteUpdate', bindGuard)
 }
 
@@ -349,6 +386,7 @@ function extractEnterGuards (
     activated,
     'beforeRouteEnter',
     (guard, _, match, key) => {
+      // beforeRouteEnter可以传入回调,获取vm
       return bindEnterGuard(guard, match, key, cbs, isValid)
     }
   )
@@ -364,12 +402,14 @@ function bindEnterGuard (
   return function routeEnterGuard (to, from, next) {
     return guard(to, from, cb => {
       if (typeof cb === 'function') {
+        // 轮训函数放入cbs
         cbs.push(() => {
           // #750
           // if a router-view is wrapped with an out-in transition,
           // the instance may not have been registered at this time.
           // we will need to poll for registration until current route
           // is no longer valid.
+          // 轮训,有了instances以后，就执行cb
           poll(cb, match.instances, key, isValid)
         })
       }

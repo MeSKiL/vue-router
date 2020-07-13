@@ -19,24 +19,29 @@ export function createMatcher (
 ): Matcher {
   const { pathList, pathMap, nameMap } = createRouteMap(routes)
 
+  // 动态添加路由的方法
   function addRoutes (routes) {
     createRouteMap(routes, pathList, pathMap, nameMap)
   }
-
+  // 根据传入的当前路径与传入路径,可以计算出新的路径,并返回route对象
+  // match不到也会返回route对象，但是match不到组件
   function match (
     raw: RawLocation,
     currentRoute?: Route,
     redirectedFrom?: Location
   ): Route {
+    // 根据当前location与传入的location，计算出新的location
     const location = normalizeLocation(raw, currentRoute, false, router)
     const { name } = location
 
+    // 如果有name，就从nameMap里找record
     if (name) {
       const record = nameMap[name]
       if (process.env.NODE_ENV !== 'production') {
         warn(record, `Route with name '${name}' does not exist`)
       }
       if (!record) return _createRoute(null, location)
+      // 处理params
       const paramNames = record.regex.keys
         .filter(key => !key.optional)
         .map(key => key.name)
@@ -53,6 +58,7 @@ export function createMatcher (
         }
       }
 
+      // 根据params计算path
       location.path = fillParams(record.path, location.params, `named route "${name}"`)
       return _createRoute(record, location, redirectedFrom)
     } else if (location.path) {
@@ -60,6 +66,7 @@ export function createMatcher (
       for (let i = 0; i < pathList.length; i++) {
         const path = pathList[i]
         const record = pathMap[path]
+        // location匹配record的正则
         if (matchRoute(record.regex, location.path, location.params)) {
           return _createRoute(record, location, redirectedFrom)
         }

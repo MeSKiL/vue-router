@@ -18,6 +18,7 @@ export function createRoute (
     query = clone(query)
   } catch (e) {}
 
+  // route对象
   const route: Route = {
     name: location.name || (record && record.name),
     meta: (record && record.meta) || {},
@@ -54,6 +55,7 @@ export const START = createRoute(null, {
 })
 
 function formatMatch (record: ?RouteRecord): Array<RouteRecord> {
+  // 把当前record到最根的路径的所有record就塞入res并返回
   const res = []
   while (record) {
     res.unshift(record)

@@ -16,6 +16,7 @@ export function resolveAsyncComponents (matched: Array<RouteRecord>): Function {
       // we want to halt the navigation until the incoming component has been
       // resolved.
       if (typeof def === 'function' && def.cid === undefined) {
+        // def是function cid的undefined的时候，说明是异步组件
         hasAsync = true
         pending++
 
@@ -27,9 +28,11 @@ export function resolveAsyncComponents (matched: Array<RouteRecord>): Function {
           def.resolved = typeof resolvedDef === 'function'
             ? resolvedDef
             : _Vue.extend(resolvedDef)
+          // 异步组件解析完成后要赋值回match.components[key]
           match.components[key] = resolvedDef
           pending--
           if (pending <= 0) {
+            // 异步执行next
             next()
           }
         })

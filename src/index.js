@@ -34,24 +34,30 @@ export default class VueRouter {
   afterHooks: Array<?AfterNavigationHook>;
 
   constructor (options: RouterOptions = {}) {
+    // 组件实例
     this.app = null
     this.apps = []
     this.options = options
+    // hooks
     this.beforeHooks = []
     this.resolveHooks = []
     this.afterHooks = []
     this.matcher = createMatcher(options.routes || [], this)
 
+    // 默认hash
     let mode = options.mode || 'hash'
     this.fallback = mode === 'history' && !supportsPushState && options.fallback !== false
+    // 降级
     if (this.fallback) {
       mode = 'hash'
     }
+    // 非浏览器模式
     if (!inBrowser) {
       mode = 'abstract'
     }
     this.mode = mode
 
+    // 初始化history
     switch (mode) {
       case 'history':
         this.history = new HTML5History(this, options.base)
@@ -81,6 +87,7 @@ export default class VueRouter {
     return this.history && this.history.current
   }
 
+  // 根组件beforeCreate的时候执行,主要执行了transitionTo
   init (app: any /* Vue component instance */) {
     process.env.NODE_ENV !== 'production' && assert(
       install.installed,
@@ -109,6 +116,7 @@ export default class VueRouter {
 
     // main app previously initialized
     // return as we don't need to set up new history listener
+    // 确保this.app只执行一次。可能是多root的组件，但是一个router实例init只需要一次。
     if (this.app) {
       return
     }
@@ -118,6 +126,7 @@ export default class VueRouter {
     const history = this.history
 
     if (history instanceof HTML5History || history instanceof HashHistory) {
+      // 初始滚动
       const handleInitialScroll = (routeOrError) => {
         const from = history.current
         const expectScroll = this.options.scrollBehavior
@@ -127,6 +136,7 @@ export default class VueRouter {
           handleScroll(this, routeOrError, from, false)
         }
       }
+      // 安装监听
       const setupListeners = (routeOrError) => {
         history.setupListeners()
         handleInitialScroll(routeOrError)
@@ -141,6 +151,7 @@ export default class VueRouter {
     })
   }
 
+  // 调用beforeEach的时候会往beforeHooks里添加fn
   beforeEach (fn: Function): Function {
     return registerHook(this.beforeHooks, fn)
   }
@@ -149,6 +160,7 @@ export default class VueRouter {
     return registerHook(this.resolveHooks, fn)
   }
 
+  // 调用beforeEach的时候会往afterHooks里添加fn
   afterEach (fn: Function): Function {
     return registerHook(this.afterHooks, fn)
   }
