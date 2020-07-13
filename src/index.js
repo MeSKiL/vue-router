@@ -138,12 +138,14 @@ export default class VueRouter {
       }
       // 安装监听
       const setupListeners = (routeOrError) => {
+        // 初始化history的监听器
         history.setupListeners()
         handleInitialScroll(routeOrError)
       }
       history.transitionTo(history.getCurrentLocation(), setupListeners, setupListeners)
     }
 
+    // 监听路径变化，触发setter，就会触发组件renderer
     history.listen(route => {
       this.apps.forEach((app) => {
         app._route = route

@@ -266,6 +266,12 @@ export class History {
 
   updateRoute (route: Route) {
     this.current = route
+    // history.listen(route => {
+    //   this.apps.forEach((app) => {
+    //     app._route = route
+    //   })
+    // })
+    // 触发setter
     this.cb && this.cb(route)
   }
 

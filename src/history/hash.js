@@ -37,6 +37,7 @@ export class HashHistory extends History {
       if (!ensureSlash()) {
         return
       }
+      // 点击后退，也会执行路径切换
       this.transitionTo(getHash(), route => {
         if (supportsScroll) {
           handleScroll(this.router, route, current, true)
@@ -46,6 +47,7 @@ export class HashHistory extends History {
         }
       })
     }
+    // 用push，就会触发popstate，没用push，也会触发hashchange
     const eventType = supportsPushState ? 'popstate' : 'hashchange'
     window.addEventListener(
       eventType,
@@ -111,6 +113,7 @@ function ensureSlash (): boolean {
   if (path.charAt(0) === '/') {
     return true
   }
+  // 没有hash就会走到这，所以hash模式没hash会拼成/#/
   replaceHash('/' + path)
   return false
 }

@@ -37,14 +37,18 @@ export default {
     }
   },
   render (h: Function) {
+    // 获取router实例
     const router = this.$router
+    // 当前route
     const current = this.$route
+    // 获取需要跳转的路线
     const { location, route, href } = router.resolve(
       this.to,
       current,
       this.append
     )
 
+    // 设置class
     const classes = {}
     const globalActiveClass = router.options.linkActiveClass
     const globalExactActiveClass = router.options.linkExactActiveClass
@@ -66,7 +70,9 @@ export default {
       ? createRoute(null, normalizeLocation(route.redirectedFrom), null, router)
       : route
 
+    // 当前与待比较的路由是否相同,相同的话全匹配active就会用上
     classes[exactActiveClass] = isSameRoute(current, compareTarget)
+    // 没设置全匹配就会看是否包含
     classes[activeClass] = this.exact
       ? classes[exactActiveClass]
       : isIncludedRoute(current, compareTarget)
@@ -84,6 +90,7 @@ export default {
     }
 
     const on = { click: guardEvent }
+    // 增加事件
     if (Array.isArray(this.event)) {
       this.event.forEach(e => {
         on[e] = handler
@@ -122,10 +129,12 @@ export default {
     }
 
     if (this.tag === 'a') {
+      // 如果是a标签，就是on和href
       data.on = on
       data.attrs = { href, 'aria-current': ariaCurrentValue }
     } else {
       // find the first <a> child and apply listener and href
+      // 递归找a，找到了就加上href。
       const a = findAnchor(this.$slots.default)
       if (a) {
         // in case the <a> is a static node

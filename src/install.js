@@ -28,12 +28,13 @@ export function install (Vue) {
         // 实例上存上router
         this._router = this.$options.router
         this._router.init(this)
-        // 将下划线_route变成响应式的，值为当前路由
+        // 将下划线_route变成响应式的，值为当前路由，改变了以后，执行render
         Vue.util.defineReactive(this, '_route', this._router.history.current)
       } else {
         // 所有组件的_routerRoot都是根路由
         this._routerRoot = (this.$parent && this.$parent._routerRoot) || this
       }
+      // 注册组件实例
       registerInstance(this, this)
     },
     destroyed () {

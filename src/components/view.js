@@ -16,8 +16,11 @@ export default {
 
     // directly use parent context's createElement() function
     // so that components rendered by router-view can resolve named slots
+    // 拿到vue实例的$createElement
     const h = parent.$createElement
     const name = props.name
+    // 当前路径
+    // 触发getter,依赖收集
     const route = parent.$route
     const cache = parent._routerViewCache || (parent._routerViewCache = {})
 
@@ -25,9 +28,11 @@ export default {
     // has been toggled inactive but kept-alive.
     let depth = 0
     let inactive = false
+    // 找到root，并且depth++
     while (parent && parent._routerRoot !== parent) {
       const vnodeData = parent.$vnode ? parent.$vnode.data : {}
       if (vnodeData.routerView) {
+        // 嵌套深度
         depth++
       }
       if (vnodeData.keepAlive && parent._directInactive && parent._inactive) {
@@ -35,6 +40,7 @@ export default {
       }
       parent = parent.$parent
     }
+    // 当前深度
     data.routerViewDepth = depth
 
     // render previous view if the tree is inactive and kept-alive
@@ -54,12 +60,14 @@ export default {
       }
     }
 
+    // 当前匹配到的路径的深度去找到需要渲染的组件。因为matched是与嵌套关系关联的数组
     const matched = route.matched[depth]
     const component = matched && matched.components[name]
 
     // render empty node if no matched route or no config component
     if (!matched || !component) {
       cache[name] = null
+      // 没有匹配就渲染注释节点
       return h()
     }
 
@@ -68,6 +76,7 @@ export default {
 
     // attach instance registration hook
     // this will be called in the instance's injected lifecycle hooks
+    // 注册路由实例,flatMapComponents里会用到，在beforeCreated里会执行
     data.registerRouteInstance = (vm, val) => {
       // val could be undefined for unregistration
       const current = matched.instances[name]
